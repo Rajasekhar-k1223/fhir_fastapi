@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pydantic-settings
+fhir.resources
+pymongo
+python-dotenv
