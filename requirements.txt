@@ -4,3 +4,5 @@ pydantic-settings
 fhir.resources
 pymongo
 python-dotenv
+pytz
+# PIL
