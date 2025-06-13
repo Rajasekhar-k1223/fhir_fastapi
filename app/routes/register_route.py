@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends,HTTPException
 from sqlmodel import Session
 from passlib.hash import bcrypt
 from app.db.postgresql import get_db
@@ -17,9 +17,22 @@ def generate_user_id() -> str:
 
 @router.post("/register")
 def register_user(data: UserRegisterSchema, db: Session = Depends(get_db)):
+    # ✅ Check for existing email
+    if db.query(User).filter(User.email == data.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # ✅ Optional: Check for duplicate mobile
+    if db.query(User).filter(User.mobile == data.mobile).first():
+        raise HTTPException(status_code=400, detail="Mobile number already registered")
+
+    # ✅ Optional: Check for duplicate Aadhar
+    if data.aadhar and db.query(User).filter(User.aadhar_number == data.aadhar).first():
+        raise HTTPException(status_code=400, detail="Aadhar number already registered")
+
+    # Generate user_id
     user_id = generate_user_id()
 
-    # Create User record
+    # Create user
     user = User(
         user_id=user_id,
         email=data.email,
@@ -33,7 +46,7 @@ def register_user(data: UserRegisterSchema, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    # Create related Patient or Doctor record
+    # Create related practitioner or patient
     if data.role.lower() == "doctor":
         doctor = Practitioner(user_id=user.user_id, name=user.username, mobile=user.mobile)
         db.add(doctor)
@@ -42,4 +55,8 @@ def register_user(data: UserRegisterSchema, db: Session = Depends(get_db)):
         db.add(patient)
 
     db.commit()
-    return {"message": "User registered", "user_id": user.user_id}
+
+    return {
+        "message": "User registered successfully",
+        "user_id": user.user_id
+    }
