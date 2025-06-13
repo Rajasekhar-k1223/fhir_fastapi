@@ -1,18 +1,20 @@
-from fastapi import APIRouter, Depends,HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from passlib.hash import bcrypt
+from pymongo import MongoClient
 from app.db.postgresql import get_db
 from app.models.user_model import User
-from app.models.patient_model import Patient
-from app.models.pracitioner_model import Practitioner
+from app.models.patient_model import Patient as PGPatient
+from app.models.pracitioner_model import Practitioner as PGPractitioner
 from app.schemas.UserRegisterSchema import UserRegisterSchema
+from app.db.mongo import patient_collection, practitioner_collection
 import random
-
+from bson import ObjectId
 
 router = APIRouter()
 
+# ✅ Generate 6-digit user_id
 def generate_user_id() -> str:
-    import random
     return str(random.randint(100000, 999999))
 
 @router.post("/register")
@@ -21,18 +23,18 @@ def register_user(data: UserRegisterSchema, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == data.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    # ✅ Optional: Check for duplicate mobile
+    # ✅ Check for duplicate mobile
     if db.query(User).filter(User.mobile == data.mobile).first():
         raise HTTPException(status_code=400, detail="Mobile number already registered")
 
-    # ✅ Optional: Check for duplicate Aadhar
+    # ✅ Check for duplicate Aadhar
     if data.aadhar and db.query(User).filter(User.aadhar_number == data.aadhar).first():
         raise HTTPException(status_code=400, detail="Aadhar number already registered")
 
-    # Generate user_id
+    # ✅ Generate user_id
     user_id = generate_user_id()
 
-    # Create user
+    # ✅ Create User in PostgreSQL
     user = User(
         user_id=user_id,
         email=data.email,
@@ -46,15 +48,52 @@ def register_user(data: UserRegisterSchema, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    # Create related practitioner or patient
+    # ✅ Save Patient or Practitioner to PostgreSQL and MongoDB
     if data.role.lower() == "doctor":
-        doctor = Practitioner(user_id=user.user_id, name=user.username, mobile=user.mobile)
+        # PostgreSQL entry
+        doctor = PGPractitioner(
+            user_id=user.user_id,
+            username=user.username,
+            email=user.email,
+            mobile=user.mobile,
+            aadhar_number=user.aadhar_number
+        )
         db.add(doctor)
-    else:
-        patient = Patient(user_id=user.user_id, name=user.username, mobile=user.mobile)
-        db.add(patient)
+        db.commit()
 
-    db.commit()
+        # MongoDB (FHIR-style)
+        fhir_doctor_doc = {
+            "resourceType": "Practitioner",
+            "id": str(ObjectId()),
+            "identifier": [{"value": user.user_id}],
+            "name": [{"text": user.username}],
+            "telecom": [{"system": "phone", "value": user.mobile}],
+            "meta": {"source": "registration-api"}
+        }
+        practitioner_collection.insert_one(fhir_doctor_doc)
+
+    else:
+        # PostgreSQL entry
+        patient = PGPatient(
+            user_id=user.user_id,
+            username=user.username,
+            email=user.email,
+            mobile=user.mobile,
+            aadhar_number=user.aadhar_number
+        )
+        db.add(patient)
+        db.commit()
+
+        # MongoDB (FHIR-style)
+        fhir_patient_doc = {
+            "resourceType": "Patient",
+            "id": str(ObjectId()),
+            "identifier": [{"value": user.user_id}],
+            "name": [{"text": user.username}],
+            "telecom": [{"system": "phone", "value": user.mobile}],
+            "meta": {"source": "registration-api"}
+        }
+        patient_collection.insert_one(fhir_patient_doc)
 
     return {
         "message": "User registered successfully",
