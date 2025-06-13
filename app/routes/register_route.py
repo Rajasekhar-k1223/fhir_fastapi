@@ -4,8 +4,8 @@ from passlib.hash import bcrypt
 from pymongo import MongoClient
 from app.db.postgresql import get_db
 from app.models.user_model import User
-from app.models.patient_model import Patient as PGPatient
-from app.models.pracitioner_model import Practitioner as PGPractitioner
+from app.models.patient_model import PatientResource
+from app.models.pracitioner_model import PractitionerResource
 from app.schemas.UserRegisterSchema import UserRegisterSchema
 from app.db.mongo import patient_collection, practitioner_collection
 import random
@@ -50,51 +50,15 @@ def register_user(data: UserRegisterSchema, db: Session = Depends(get_db)):
 
     # ✅ Save Patient or Practitioner to PostgreSQL and MongoDB
     if data.role.lower() == "doctor":
-        # PostgreSQL entry
-        doctor = PGPractitioner(
-            user_id=user.user_id,
-            username=user.username,
-            email=user.email,
-            mobile=user.mobile,
-            aadhar_number=user.aadhar_number
-        )
-        db.add(doctor)
-        db.commit()
-
-        # MongoDB (FHIR-style)
-        fhir_doctor_doc = {
-            "resourceType": "Practitioner",
-            "id": str(ObjectId()),
-            "identifier": [{"value": user.user_id}],
-            "name": [{"text": user.username}],
-            "telecom": [{"system": "phone", "value": user.mobile}],
-            "meta": {"source": "registration-api"}
-        }
-        practitioner_collection.insert_one(fhir_doctor_doc)
-
+        fhir_data = {}  # Optional: extend with FHIR-compliant fields
+        practitioner_resource = PractitionerResource(fhir_data, user.user_id, user.username, user.mobile)
+        practitioner_resource.save_to_postgres(db)
+        practitioner_resource.save_to_mongodb()
     else:
-        # PostgreSQL entry
-        patient = PGPatient(
-            user_id=user.user_id,
-            username=user.username,
-            email=user.email,
-            mobile=user.mobile,
-            aadhar_number=user.aadhar_number
-        )
-        db.add(patient)
-        db.commit()
-
-        # MongoDB (FHIR-style)
-        fhir_patient_doc = {
-            "resourceType": "Patient",
-            "id": str(ObjectId()),
-            "identifier": [{"value": user.user_id}],
-            "name": [{"text": user.username}],
-            "telecom": [{"system": "phone", "value": user.mobile}],
-            "meta": {"source": "registration-api"}
-        }
-        patient_collection.insert_one(fhir_patient_doc)
-
+        fhir_data = {}
+        patient_resource = PatientResource(fhir_data, user.user_id, user.username, user.mobile)
+        patient_resource.save_to_postgres(db)
+        patient_resource.save_to_mongodb()
     return {
         "message": "User registered successfully",
         "user_id": user.user_id
