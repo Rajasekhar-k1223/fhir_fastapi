@@ -6,3 +6,8 @@ pymongo
 python-dotenv
 pytz
 # PIL
+sqlmodel
+motor
+passlib
+python-jose[cryptography]
+asyncpg
