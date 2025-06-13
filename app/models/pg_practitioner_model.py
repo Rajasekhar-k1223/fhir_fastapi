@@ -4,7 +4,7 @@ import uuid
 
 
 class PGPractitioner(SQLModel, table=True):
-    __tablename__ = "practitioners"
+    __tablename__ = "practitioner"
 
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: str = Field(index=True, unique=True)

@@ -3,7 +3,7 @@ from typing import Optional
 import uuid
 
 class PGPatient(SQLModel, table=True):
-    __tablename__ = "patients"
+    __tablename__ = "patient"
 
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: str = Field(index=True, unique=True)
