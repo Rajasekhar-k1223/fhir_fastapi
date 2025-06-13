@@ -1,9 +1,15 @@
-# app/models/pg_patient_model.py
-
 from sqlmodel import SQLModel, Field
+from typing import Optional
+import uuid
 
 class PGPatient(SQLModel, table=True):
-    id: int = Field(default=None, primary_key=True)
-    user_id: str
+    __tablename__ = "patients"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: str = Field(index=True, unique=True)
     name: str
     mobile: str
+    created_at: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+
+    class Config:
+        from_attributes = True
