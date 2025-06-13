@@ -6,7 +6,7 @@ from app.routes import (
     appointment_route, carePlan_route, careTeam_route, condition_route, coverage_route,
     diagnosticReport_route, documentReference_route, encounter_route, episodeCare_route,
     goal_route, immunization_route, medicationRequest_route, observation_route,
-    procedure_route, relatedPerson_route,auth
+    procedure_route, relatedPerson_route,auth,register_route
 )
 from app.core.config import settings
 # from PIL import Image
@@ -32,7 +32,8 @@ def root():
     return {"message": "FastAPI running at root!"}
 
 # ✅ Include FHIR-based routers
-app.include_router(auth.router, prefix="/api", tags=["login"])
+app.include_router(auth.router, prefix="/api", tags=["Auth"])
+app.include_router(register_route.router, prefix="/api", tags=["Register"])
 app.include_router(patient_route.router, prefix="/api", tags=["Patient"])
 app.include_router(practitioner_route.router, prefix="/api", tags=["Practitioner"])
 app.include_router(organization_route.router, prefix="/api", tags=["Organization"])
