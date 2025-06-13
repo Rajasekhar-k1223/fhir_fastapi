@@ -13,3 +13,4 @@ python-jose[cryptography]
 asyncpg
 psycopg2
 requests
+email-validator
