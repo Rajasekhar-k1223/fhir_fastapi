@@ -11,3 +11,5 @@ motor
 passlib
 python-jose[cryptography]
 asyncpg
+psycopg2
+requests
