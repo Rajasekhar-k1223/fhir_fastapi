@@ -1,39 +1,52 @@
 import datetime
 from copy import deepcopy
 from bson import ObjectId
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from fhir.resources.patient import Patient as FHIRPatient
 from fhir.resources.meta import Meta
 
-from app.models.pg_patient_model import PGPatient 
+from app.models.pg_patient_model import PGPatient
 from app.db.mongo import patient_collection
 
 
 class PatientResource:
-    def __init__(self, data: dict, user_id: str, username: str,email:str, mobile: str, aadhar_number: str):
-        self.user_id = user_id
-        self.username = username
-        self.email=email
-        self.mobile = mobile
-        self.aadhar_number = aadhar_number
+    def __init__(
+        self,
+        data: dict,
+        user_id: Optional[str] = None,
+        username: Optional[str] = None,
+        email: Optional[str] = None,
+        mobile: Optional[str] = None,
+        aadhar_number: Optional[str] = None
+    ):
+        """
+        Initialize a FHIR-compliant PatientResource object.
 
-        # Clean and initialize FHIR data
+        If any key patient information is missing, it defaults to 'unknown'.
+        """
+        self.user_id = user_id or "unknown"
+        self.username = username or "unknown"
+        self.email = email or "unknown"
+        self.mobile = mobile or "unknown"
+        self.aadhar_number = aadhar_number or "unknown"
+
         cleaned_data = self._sanitize(data)
         self.patient = FHIRPatient(**cleaned_data)
 
         # Add/override standard fields
         self.patient.id = str(ObjectId())
         self.patient.active = True
-        self.patient.name = [{"use": "official", "text": username}]
-        self.patient.telecom = [{"system": "phone", "value": mobile}]
+        self.patient.name = [{"use": "official", "text": self.username}]
+        self.patient.telecom = [{"system": "phone", "value": self.mobile}]
         self.patient.identifier = [{
             "use": "official",
             "system": "https://uid.nesthives.com",
-            "value": user_id
+            "value": self.user_id
         }]
         self.patient.meta = Meta.construct(lastUpdated=datetime.datetime.utcnow().isoformat())
 
+        # Set gender and birthDate defaults if missing
         if not self.patient.gender:
             self.patient.gender = "unknown"
         if not self.patient.birthDate:
@@ -44,7 +57,9 @@ class PatientResource:
             self.patient.birthDate = str(self.patient.birthDate)
 
     def _sanitize(self, data: dict) -> dict:
-        """Remove non-FHIR fields like latitude/longitude/altitude and others."""
+        """
+        Remove non-FHIR fields from the input data.
+        """
         data = deepcopy(data)
 
         if "address" in data:
@@ -57,6 +72,9 @@ class PatientResource:
         return data
 
     def save_to_postgres(self, db_session) -> PGPatient:
+        """
+        Save patient metadata to PostgreSQL.
+        """
         patient = PGPatient(
             user_id=self.user_id,
             username=self.username,
@@ -70,23 +88,31 @@ class PatientResource:
         return patient
 
     def save_to_mongodb(self):
+        """
+        Save full FHIR-compliant patient resource to MongoDB.
+        """
         return patient_collection.insert_one(self.to_dict()).inserted_id
 
     def get_resource(self):
+        """
+        Get the FHIR Patient resource object.
+        """
         return self.patient
 
     def get_id(self):
+        """
+        Get the internal FHIR patient resource ID.
+        """
         return self.patient.id
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert FHIR patient resource to dict and clean incompatible types."""
+        """
+        Convert FHIR patient resource to a dictionary, sanitizing incompatible types.
+        """
         data = self.patient.dict()
 
-        # Ensure birthDate is a string
         if isinstance(data.get("birthDate"), (datetime.date, datetime.datetime)):
             data["birthDate"] = data["birthDate"].isoformat()[:10]
 
-        # Remove or stringify ObjectId
         data.pop("_id", None)
-
         return data
