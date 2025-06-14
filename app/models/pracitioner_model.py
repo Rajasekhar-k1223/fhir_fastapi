@@ -8,7 +8,7 @@ from fhir.resources.practitioner import Practitioner as FHIRPractitioner
 from fhir.resources.meta import Meta
 
 from app.models.pg_practitioner_model import PGPractitioner  # ✅ Avoid circular import
-from app.db.mongo import MongoClient
+from app.db.mongo import practitioner_collection
 
 
 class PractitionerResource:
@@ -100,8 +100,7 @@ class PractitionerResource:
 
     def save_to_mongodb(self):
         """Save practitioner as FHIR JSON to MongoDB."""
-        mongo_db = MongoClient()
-        return mongo_db["practitioners"].insert_one(self.to_dict()).inserted_id
+        return practitioner_collection.insert_one(self.to_dict()).inserted_id
 
     def get_resource(self):
         """Return full FHIR resource object."""

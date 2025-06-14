@@ -7,7 +7,7 @@ from fhir.resources.patient import Patient as FHIRPatient
 from fhir.resources.meta import Meta
 
 from app.models.pg_patient_model import PGPatient 
-from app.db.mongo import MongoClient
+from app.db.mongo import patient_collection
 
 
 class PatientResource:
@@ -58,8 +58,7 @@ class PatientResource:
         return patient
 
     def save_to_mongodb(self):
-        mongo_db = MongoClient()
-        return mongo_db["patients"].insert_one(self.to_dict()).inserted_id
+        return patient_collection.insert_one(self.to_dict()).inserted_id
 
     def get_resource(self):
         return self.patient
