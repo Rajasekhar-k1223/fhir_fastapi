@@ -11,7 +11,7 @@ from app.db.mongo import patient_collection
 
 
 class PatientResource:
-    def __init__(self, data: dict, user_id: str, username: str, mobile: str,aadhar_number:str):
+    def __init__(self, data: dict, user_id: str, username: str, mobile: str, aadhar_number: str):
         self.user_id = user_id
         self.username = username
         self.mobile = mobile
@@ -32,10 +32,15 @@ class PatientResource:
             "value": user_id
         }]
         self.patient.meta = Meta.construct(lastUpdated=datetime.datetime.utcnow().isoformat())
+
         if not self.patient.gender:
             self.patient.gender = "unknown"
         if not self.patient.birthDate:
             self.patient.birthDate = "1990-01-01"
+        elif isinstance(self.patient.birthDate, (datetime.date, datetime.datetime)):
+            self.patient.birthDate = self.patient.birthDate.isoformat()[:10]
+        elif not isinstance(self.patient.birthDate, str):
+            self.patient.birthDate = str(self.patient.birthDate)
 
     def _sanitize(self, data: dict) -> dict:
         """Remove non-FHIR fields like latitude/longitude/altitude and others."""
@@ -51,7 +56,12 @@ class PatientResource:
         return data
 
     def save_to_postgres(self, db_session) -> PGPatient:
-        patient = PGPatient(user_id=self.user_id, username=self.username, mobile=self.mobile,aadhar_number=self.aadhar_number)
+        patient = PGPatient(
+            user_id=self.user_id,
+            username=self.username,
+            mobile=self.mobile,
+            aadhar_number=self.aadhar_number
+        )
         db_session.add(patient)
         db_session.commit()
         db_session.refresh(patient)
@@ -67,4 +77,14 @@ class PatientResource:
         return self.patient.id
 
     def to_dict(self) -> Dict[str, Any]:
-        return self.patient.dict()
+        """Convert FHIR patient resource to dict and clean incompatible types."""
+        data = self.patient.dict()
+
+        # Ensure birthDate is a string
+        if isinstance(data.get("birthDate"), (datetime.date, datetime.datetime)):
+            data["birthDate"] = data["birthDate"].isoformat()[:10]
+
+        # Remove or stringify ObjectId
+        data.pop("_id", None)
+
+        return data
