@@ -24,7 +24,7 @@ def get_all_patients(skip:int=Query(0,ge=0),limit:int=Query(100,ge=1,le=1000)):
 def get_patient(patient_id:str):
     try:
         patient = service.get_by_id(patient_id)
-        return {"message":"Patient found","data":patient}
+        return {"message":"Patient found","data":patient.dict()}
     except Exception as e:
         raise HTTPException(status_code=404,detail=str(e))
     
