@@ -1,17 +1,18 @@
 import random
 import requests
 from typing import Dict
-
+import os
+# load_dotenv() 
 otp_store: Dict[str, str] = {}
 
-FAST2SMS_API_KEY = "rnPdHGXOYE592ZxUzhTuDkJCv7fiwA6y4FRQcWe3alBKVpL8oI9AdM7lhnjb5uKIagZmsiQr0TwBetLk"
+# FAST2SMS_API_KEY = "rnPdHGXOYE592ZxUzhTuDkJCv7fiwA6y4FRQcWe3alBKVpL8oI9AdM7lhnjb5uKIagZmsiQr0TwBetLk"
 
 def send_otp(mobile: str) -> str:
     otp = str(random.randint(100000, 999999))
     otp_store[mobile] = otp
 
     payload = {
-        'authorization': FAST2SMS_API_KEY,
+        'authorization': os.getenv("FAST2SMS_API_KEY"),
         'sender_id': 'FSTSMS',
         'message': f"Your OTP is {otp}",
         'language': 'english',

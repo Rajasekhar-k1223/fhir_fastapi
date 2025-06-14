@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     MONGO_DEVICES_COLLECTION:str = "devices"
     MONGO_PROCEDURE_COLLECTION:str = "procedures"
     MONGO_RELATED_PERSON_COLLECTION:str = "related_persons"
+    FAST2SMS_API_KEY: str 
     
     model_config = ConfigDict(
         env_file=".env",
