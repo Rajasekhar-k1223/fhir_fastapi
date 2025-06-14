@@ -11,11 +11,16 @@ class PatientService(FHIRService):
         patient_collection.insert_one(patient.to_dict())
         return patient.get_resource()
     
-    def get_by_id(self, resource_id:str):
-        data = patient_collection.find_one({"identifier.value":resource_id},{"_id":0})
+    # def get_by_id(self, resource_id:str):
+    #     data = patient_collection.find_one({"identifier.value":resource_id},{"_id":0})
+    #     if not data:
+    #         raise ValueError("Patient not found")
+    #     return PatientResource(data).get_resource()
+    def get_by_id(self, resource_id: str):
+        data = patient_collection.find_one({"identifier.value": resource_id}, {"_id": 0})
         if not data:
             raise ValueError("Patient not found")
-        return PatientResource(data).get_resource()
+        return data  # Directly return the raw MongoDB document
     @staticmethod
     def get_all(skip: int=0,limit:int=1000):
         cursor = patient_collection.find({},{"_id":0}).skip(skip).limit(limit)
