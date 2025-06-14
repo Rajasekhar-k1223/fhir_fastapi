@@ -9,6 +9,7 @@ class PGPatient(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: str = Field(index=True, unique=True)
     username: str
+    email:str
     mobile: str
     aadhar_number:str
     created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)

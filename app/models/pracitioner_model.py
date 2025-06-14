@@ -12,7 +12,7 @@ from app.db.mongo import practitioner_collection
 
 
 class PractitionerResource:
-    def __init__(self, data: dict, user_id: str, username: str, mobile: str,aadhar_number:str):
+    def __init__(self, data: dict, user_id: str, username: str,email:str, mobile: str,aadhar_number:str):
         """
         Construct FHIR Practitioner resource and prepare for persistence.
 
@@ -24,6 +24,7 @@ class PractitionerResource:
         """
         self.user_id = user_id
         self.username = username
+        self.email = email
         self.mobile = mobile
         self.aadhar_number = aadhar_number
 
@@ -90,6 +91,7 @@ class PractitionerResource:
         practitioner = PGPractitioner(
             user_id=self.user_id,
             username=self.username,
+            email=self.email,
             mobile=self.mobile,
             aadhar_number=self.aadhar_number
         )

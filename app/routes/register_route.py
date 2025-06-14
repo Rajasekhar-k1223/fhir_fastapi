@@ -51,12 +51,12 @@ def register_user(data: UserRegisterSchema, db: Session = Depends(get_db)):
     # ✅ Save Patient or Practitioner to PostgreSQL and MongoDB
     if data.role.lower() == "doctor":
         fhir_data = {}  # Optional: extend with FHIR-compliant fields
-        practitioner_resource = PractitionerResource(fhir_data, user.user_id, user.username, user.mobile,user.aadhar_number)
+        practitioner_resource = PractitionerResource(fhir_data, user.user_id, user.username,user.email, user.mobile,user.aadhar_number)
         practitioner_resource.save_to_postgres(db)
         practitioner_resource.save_to_mongodb()
     else:
         fhir_data = {}
-        patient_resource = PatientResource(fhir_data, user.user_id, user.username, user.mobile,user.aadhar_number)
+        patient_resource = PatientResource(fhir_data, user.user_id, user.username,user.email, user.mobile,user.aadhar_number)
         patient_resource.save_to_postgres(db)
         patient_resource.save_to_mongodb()
     return {
