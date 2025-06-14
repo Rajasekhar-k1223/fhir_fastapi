@@ -12,7 +12,7 @@ from app.db.mongo import MongoClient
 
 
 class PractitionerResource:
-    def __init__(self, data: dict, user_id: str, username: str, mobile: str):
+    def __init__(self, data: dict, user_id: str, username: str, mobile: str,aadhar_number:str):
         """
         Construct FHIR Practitioner resource and prepare for persistence.
 
@@ -25,6 +25,7 @@ class PractitionerResource:
         self.user_id = user_id
         self.username = username
         self.mobile = mobile
+        self.aadhar_number = aadhar_number
 
         cleaned_data = self._sanitize(data)
         self.practitioner = FHIRPractitioner(**cleaned_data)
@@ -88,8 +89,9 @@ class PractitionerResource:
         """
         practitioner = PGPractitioner(
             user_id=self.user_id,
-            name=self.username,
-            mobile=self.mobile
+            username=self.username,
+            mobile=self.mobile,
+            aadhar_number=self.aadhar_number
         )
         db_session.add(practitioner)
         db_session.commit()

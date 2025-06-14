@@ -51,7 +51,7 @@ class PatientResource:
         return data
 
     def save_to_postgres(self, db_session) -> PGPatient:
-        patient = PGPatient(user_id=self.user_id, name=self.username, mobile=self.mobile)
+        patient = PGPatient(user_id=self.user_id, username=self.username, mobile=self.mobile,aadhar_number=self.aadhar_number)
         db_session.add(patient)
         db_session.commit()
         db_session.refresh(patient)
