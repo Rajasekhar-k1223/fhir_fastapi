@@ -11,10 +11,11 @@ from app.db.mongo import MongoClient
 
 
 class PatientResource:
-    def __init__(self, data: dict, user_id: str, username: str, mobile: str):
+    def __init__(self, data: dict, user_id: str, username: str, mobile: str,aadhar_number:str):
         self.user_id = user_id
         self.username = username
         self.mobile = mobile
+        self.aadhar_number = aadhar_number
 
         # Clean and initialize FHIR data
         cleaned_data = self._sanitize(data)
