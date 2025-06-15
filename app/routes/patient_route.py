@@ -1,6 +1,6 @@
-from fastapi import APIRouter,HTTPException,Query
+from fastapi import APIRouter,HTTPException,Query,Depends
 from app.services.patient_service import PatientService
-
+from app.auth.jwt_handler import get_current_user
 router = APIRouter()
 service = PatientService()
 
@@ -21,7 +21,7 @@ def get_all_patients(skip:int=Query(0,ge=0),limit:int=Query(100,ge=1,le=1000)):
         raise HTTPException(status_code=500,detail=str(e))
 
 @router.get("/patient/{patient_id}")
-def get_patient(patient_id:str):
+def get_patient(patient_id:str,token_data: dict = Depends(get_current_user)):
     try:
         patient = service.get_by_id(patient_id)
         return {"message":"Patient found","data":patient}
