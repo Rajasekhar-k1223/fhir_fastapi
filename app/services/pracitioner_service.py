@@ -17,4 +17,4 @@ class PractitionerService(FHIRService):
         data = practitioner_collection.find_one({"identifier.value": id},{"_id": 0, "name": 1})
         if not data:
             raise ValueError("Patient not found")
-        return PractitionerResource(data).get_resource()
+        return data
